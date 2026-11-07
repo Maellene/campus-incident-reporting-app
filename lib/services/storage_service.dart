@@ -1,18 +1,28 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:http/http.dart' as http;
 
 class StorageService {
-  final FirebaseStorage _storage = FirebaseStorage.instance;
+  static const String _cloudName = 'cdzj897n';
+  static const String _uploadPreset = 'campus_incidents';
 
   Future<String> uploadIncidentImage(File file, String incidentId) async {
-    final ref = _storage.ref().child('incident_images/$incidentId.jpg');
-    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
-    return ref.getDownloadURL();
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$_cloudName/image/upload',
+    );
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = _uploadPreset
+      ..fields['public_id'] = incidentId
+      ..files.add(await http.MultipartFile.fromPath('file', file.path));
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    if (response.statusCode != 200) {
+      throw Exception('Image upload failed');
+    }
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return data['secure_url'] as String;
   }
 
-  Future<void> deleteImage(String url) async {
-    try {
-      await _storage.refFromURL(url).delete();
-    } catch (_) {}
-  }
+  Future<void> deleteImage(String url) async {}
 }

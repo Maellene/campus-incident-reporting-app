@@ -27,6 +27,12 @@ class IncidentProvider extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   String? get categoryFilter => _categoryFilter;
   String? get statusFilter => _statusFilter;
+  String get searchQuery => _searchQuery;
+
+  bool get hasActiveFilters =>
+      _searchQuery.isNotEmpty ||
+      _categoryFilter != null ||
+      _statusFilter != null;
 
   int get totalCount => _incidents.length;
   int get submittedCount => _countOf(AppConstants.statusSubmitted);
